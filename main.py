@@ -44,6 +44,17 @@ for job_search in alert_links:
   driver.find_element_by_xpath("//input[contains(@id, 'sort-by-date')]//parent::*").click()
   driver.find_element_by_xpath("//artdeco-dropdown-trigger[contains(@aria-label, 'Sort by')]").click()
 
+  search_results_div = driver.find_element_by_xpath("//div[contains(@class, 'jobs-search-results')]")
+
+  # scroll to the bottom of the job posts - there's definitely a better way to do this
+  time.sleep(1)
+  search_results_div.send_keys(Keys.PAGE_DOWN)
+  time.sleep(1)
+  search_results_div.send_keys(Keys.PAGE_DOWN)
+  time.sleep(1)
+  search_results_div.send_keys(Keys.PAGE_DOWN)
   
+  search_results = search_results_div.find_elements_by_xpath(".//li[contains(@class, 'list__item')]")
 
-
+  for job_posting in search_results:
+    job_posting.click()
