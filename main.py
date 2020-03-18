@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as exp_conds
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time
 from dotenv import load_dotenv
@@ -111,7 +112,7 @@ def submit_application():
   # submit form
   driver.find_element_by_xpath("//button[contains(@aria-label, 'Submit')]").click()
 
-  dismiss_btn = wait.until(exp_conds.visibility_of_element_located(driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]")))
+  dismiss_btn = wait.until(exp_conds.visibility_of_element_located(By.XPATH, "//button[contains(@aria-label, 'Dismiss')]"))
   dismiss_btn.click()
   print("Applied!")
 
@@ -139,6 +140,8 @@ def main():
       job_posting.click()
       # there are several possible reasons for not being able to click the apply button
       try:
+        # This button can sometimes take time to switch to 'aready applied', but Selenium will still think that it clicked it
+        time.sleep(2)
         driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]").click()
       except:
         try:
