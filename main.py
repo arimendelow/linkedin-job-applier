@@ -110,18 +110,16 @@ def submit_application():
     print("No follow button")
 
   # submit form - two different types of submit button
-
   try:
-    # more common
+    # more common - this one also has a 'application submitted' dialog
     driver.find_element_by_xpath("//button[contains(@aria-label, 'Submit')]").click()
+    # Wait until the 'applied to' page is loading before dismissing the application
+    wait.until(exp_conds.visibility_of_element_located((By.XPATH, "//h2[contains(@id, 'post-apply')]")))
+    driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]").click()
   except:
     # less common
     driver.find_element_by_xpath("//button[contains(@data-control-name, 'submit')]").click()
 
-  # Wait until the 'applied to' page is loading before dismissing the application
-  wait.until(exp_conds.visibility_of_element_located((By.XPATH, "//h2[contains(@id, 'post-apply')]")))
-
-  driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]").click()
   print("Applied!")
 
 # This returns True if it's the last page, and False if it's not
@@ -160,7 +158,7 @@ def main():
       except:
         try:
           # It's possible that the job has already been applied to
-          applied = 'Applied' in applied_message
+          applied = 'Applied' in applied_message.text
           if not applied:
             raise Exception("I don't think we've yet applied to this job")
           else:
