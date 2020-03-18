@@ -112,7 +112,7 @@ def submit_application():
   # submit form
   driver.find_element_by_xpath("//button[contains(@aria-label, 'Submit')]").click()
 
-  dismiss_btn = wait.until(exp_conds.visibility_of_element_located(By.XPATH, "//button[contains(@aria-label, 'Dismiss')]"))
+  dismiss_btn = wait.until(exp_conds.visibility_of_element_located((By.XPATH, "//button[contains(@aria-label, 'Dismiss')]")))
   dismiss_btn.click()
   print("Applied!")
 
