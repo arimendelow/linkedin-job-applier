@@ -66,7 +66,7 @@ def get_job_postings_on_page():
   search_results_div.send_keys(Keys.PAGE_DOWN)
   time.sleep(1)
 
-  return search_results_div.find_elements_by_xpath(".//li[contains(@class, 'list__item')]")
+  return search_results_div.find_elements_by_xpath(".//li[contains(@class, 'list__item')]//h3")
 
 def do_additional_questions():
   try:
