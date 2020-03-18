@@ -4,10 +4,11 @@ import time
 from dotenv import load_dotenv
 load_dotenv()
 import os
+import sys
 
 driver = webdriver.Chrome(executable_path="./chromedriver")
 driver.get("https://linkedin.com")
-driver.implicitly_wait(10)
+driver.implicitly_wait(2)
 
 user = driver.find_element_by_xpath("//input[contains(@aria-label,'email')]")
 user.send_keys(os.getenv("USERNAME"))
@@ -57,4 +58,57 @@ for job_search in alert_links:
   search_results = search_results_div.find_elements_by_xpath(".//li[contains(@class, 'list__item')]")
 
   for job_posting in search_results:
+    print("Attempting to apply to a job...")
     job_posting.click()
+    # It's possible that the job has already been applied to, in which case the 'jobs-apply-button' won't exist
+    try:
+      driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]").click()
+      # next page
+      driver.find_element_by_xpath("//button[contains(@aria-label, 'Continue')]").click()
+      # next page
+      driver.find_element_by_xpath("//button[contains(@aria-label, 'Continue')]").click()
+
+      # deal with postings that have additional questions
+      try:
+        driver.find_element_by_xpath("//h3[contains(text(), 'Additional Questions')]")
+        questions = driver.find_elements_by_xpath("//h3[contains(text(), 'Additional Questions')]//parent::*//following::div[contains(@class, 'jobs-easy-apply-form-section__grouping')]")
+        for question in questions:
+          # If it's a radio button, select 'yes'
+          try:
+            question.find_element_by_xpath(".//input[contains(@value, 'Yes')]//following::label").click()
+          # Otherwise, if it wants a number, put something in
+          except:
+            print("Error:", sys.exc_info()[0])            
+            try:
+              question.find_element_by_xpath(".//input[contains(@type, 'number')]").send_keys("3")
+            except:
+              print("Error:", sys.exc_info()[0])
+              print("Cannot identify question type.")
+        # next page
+        driver.find_element_by_xpath("//button[contains(@aria-label, 'Continue')]").click()
+      except:
+        print("Error:", sys.exc_info()[0])
+        print("No additional questions")
+
+      # deal with postings that ask about work auth
+      try:
+        driver.find_element_by_xpath("//h3[contains(text(), 'Work authorization')]")
+        driver.find_element_by_xpath(".//input[contains(@value, 'Yes')]//following::label").click()
+      except:
+        print("Error:", sys.exc_info()[0])
+        print("No work auth question")
+
+      # last page
+      driver.find_element_by_xpath("//button[contains(@aria-label, 'Review')]").click()
+
+      #uncheck the follow button
+      driver.find_element_by_xpath("//label[contains(@for, 'follow')]").click()
+
+      # submit form
+      driver.find_element_by_xpath("//button[contains(@aria-label, 'Submit')]").click()
+      time.sleep(0.5)
+      driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]").click()
+      print("Applied!")
+    except:
+      print("Error:", sys.exc_info()[0])
+      print("May have already applied to this job")
