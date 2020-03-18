@@ -118,8 +118,10 @@ def submit_application():
     # less common
     driver.find_element_by_xpath("//button[contains(@data-control-name, 'submit')]").click()
 
-  dismiss_btn = wait.until(exp_conds.visibility_of_element_located((By.XPATH, "//button[contains(@aria-label, 'Dismiss')]")))
-  dismiss_btn.click()
+  # Wait until the 'applied to' page is loading before dismissing the application
+  wait.until(exp_conds.visibility_of_element_located((By.XPATH, "//h2[contains(@id, 'post-apply')]")))
+
+  driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]").click()
   print("Applied!")
 
 # This returns True if it's the last page, and False if it's not
