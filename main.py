@@ -143,7 +143,7 @@ def main():
         apply_btn = driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]")
         # This button can sometimes take time to switch to 'aready applied', but Selenium will still think that it clicked it
         # Only want it to wait if it's actually found the button
-        time.sleep(2)
+        time.sleep(3)
         apply_btn.click()
       except:
         try:
