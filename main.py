@@ -70,7 +70,6 @@ def get_job_postings_on_page():
 
 def do_additional_questions():
   try:
-    driver.find_element_by_xpath("//h3[contains(text(), 'Additional Questions')]")
     questions = driver.find_elements_by_xpath("//h3[contains(text(), 'Additional Questions')]//parent::*//following::div[contains(@class, 'jobs-easy-apply-form-section__grouping')]")
     for question in questions:
       # If it's a radio button, select 'yes'
@@ -91,13 +90,15 @@ def do_additional_questions():
     print("No additional questions")
 
 def do_work_auth_questions():
+  # Yes to 'Are you legally authorized to work in the United States?'
   try:
-    driver.find_element_by_xpath("//h3[contains(text(), 'Work authorization')]")
-    driver.find_element_by_xpath(".//input[contains(@value, 'Yes')]//following::label").click()
+    driver.find_element_by_xpath("//span[contains(text(), 'legally authorized')]//following::input[contains(@value, 'Yes')]//following::label").click()
   except:
-    print("Error:", sys.exc_info()[0])
-    print("No work auth question")
-
+    print("No legally authorized question")
+  try:
+    driver.find_element_by_xpath("//span[text()='Will you now, or in the future, require sponsorship for employment visa status (e.g. H-1B visa status)?']//following::input[contains(@value, 'No')]//following::label").click()
+  except:
+    print("No visa question")
 def submit_application():
   #uncheck the follow button
   driver.find_element_by_xpath("//label[contains(@for, 'follow')]").click()
@@ -107,6 +108,15 @@ def submit_application():
   time.sleep(0.5)
   driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]").click()
   print("Applied!")
+
+# This returns True if it's the last page, and False if it's not
+def to_next_page():
+  try:
+    driver.find_element_by_xpath("//button[contains(@aria-label, 'Continue')]").click()
+    return False
+  except:
+    driver.find_element_by_xpath("//button[contains(@aria-label, 'Review')]").click()
+    return True
 
 def main():
   alert_links = log_into_linkedin_and_get_job_alert_links()
@@ -121,19 +131,27 @@ def main():
     for job_posting in search_results:
       print("Attempting to apply to a job...")
       job_posting.click()
-      # If the screen is short and the chat menu is open, it'll block the 'jobs-apply-button' button
+      # there are several possible reasons for not being able to click the apply button
       try:
         driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]").click()
       except:
         try:
-          driver.find_element_by_xpath("//header[contains(@class,'msg-overlay-bubble-header')]").click()
-          driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]").click()
-        # It's also possible that the job has already been applied to, in which case the 'jobs-apply-button' won't exist
+          # It's possible that the job has already been applied to
+          applied = 'Applied' in driver.find_element_by_xpath("//*[contains(@class, 'applied-date')]//following::span").text
+          if not applied:
+            raise Exception("I don't think we've yet applied to this job")
+          else:
+            # go to the next job_posting
+            continue
         except:
-          print("Error:", sys.exc_info()[0])
-          print("May have already applied to this job")
-          # go to the next job_posting
-          continue
+          try:
+            driver.find_element_by_xpath("//header[contains(@class,'msg-overlay-bubble-header')]").click()
+            driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]").click()
+          except:
+            print("Error:", sys.exc_info()[0])
+            print("May have already applied to this job")
+            # go to the next job_posting
+            continue
 
       on_last_page = False
       try:
@@ -145,19 +163,21 @@ def main():
 
       # while there is no submit button...
       while(not on_last_page):
-        # does this page have additional questions? if so...
+        # determine the type of page that I'm on
+        header_text = driver.find_element_by_xpath("//div[contains(@class, 'jobs-easy-apply-modal')]//h3").text
 
-        do_additional_questions()
-        # does this page ask about work auth? if so...
-        # deal with postings that ask about work auth
-        do_work_auth_questions()
-
-      # If there is another page after this, it'll be a button with the label containing 'Continue'.
-      # Else, it'll have the label containing 'Review'
-      # to next page
-      driver.find_element_by_xpath("//button[contains(@aria-label, 'Continue')]").click()
-      # to last page
-      driver.find_element_by_xpath("//button[contains(@aria-label, 'Review')]").click()
+        if header_text == "Contact info":
+          on_last_page = to_next_page()
+        elif header_text == "Resume":
+          on_last_page = to_next_page()
+        elif header_text == "Work authorization":
+          do_work_auth_questions()
+          on_last_page = to_next_page()
+        elif header_text == "Additional Questions":
+          do_additional_questions()
+          on_last_page = to_next_page()
+        else:
+          raise Exception(f"I don't know what to do with the header_text {header_text}")
 
       submit_application()
 
