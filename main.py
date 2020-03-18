@@ -109,8 +109,14 @@ def submit_application():
   except:
     print("No follow button")
 
-  # submit form
-  driver.find_element_by_xpath("//button[contains(@aria-label, 'Submit')]").click()
+  # submit form - two different types of submit button
+
+  try:
+    # more common
+    driver.find_element_by_xpath("//button[contains(@aria-label, 'Submit')]").click()
+  except:
+    # less common
+    driver.find_element_by_xpath("//button[contains(@data-control-name, 'submit')]").click()
 
   dismiss_btn = wait.until(exp_conds.visibility_of_element_located((By.XPATH, "//button[contains(@aria-label, 'Dismiss')]")))
   dismiss_btn.click()
