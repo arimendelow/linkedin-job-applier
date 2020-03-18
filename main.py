@@ -92,7 +92,7 @@ def do_additional_questions():
 def do_work_auth_questions():
   # Yes to 'Are you legally authorized to work in the United States?'
   try:
-    driver.find_element_by_xpath("//span[contains(text(), 'legally authorized')]//following::input[contains(@value, 'Yes')]//following::label").click()
+    driver.find_element_by_xpath("//span[text()='Are you legally authorized to work in the United States?']//following::input[contains(@value, 'Yes')]//following::label").click()
   except:
     print("No legally authorized question")
   try:
@@ -105,7 +105,7 @@ def submit_application():
 
   # submit form
   driver.find_element_by_xpath("//button[contains(@aria-label, 'Submit')]").click()
-  time.sleep(0.5)
+  time.sleep(1)
   driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]").click()
   print("Applied!")
 
