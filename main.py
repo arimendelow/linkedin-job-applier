@@ -148,13 +148,17 @@ def main():
       try:
         apply_btn = driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]")
         # This button can sometimes take time to switch to 'aready applied', but Selenium will still think that it clicked it
-        # Only want it to wait if it's actually found the button
-        time.sleep(3)
-        apply_btn.click()
+        # Only want it to wait if it's actually found the button, which is why this is after that find_element command
+        try:
+          # Wait up to 5 seconds to see if the 'applied on' message shows up. If it does, go straight ahead to the next step.
+          applied_message = WebDriverWait(driver, 5).until(exp_conds.visibility_of_element_located((By.XPATH, "//*[contains(@class, 'applied-date')]//following::span")))
+          raise Exception("May have already applied")
+        except:
+          apply_btn.click()
       except:
         try:
           # It's possible that the job has already been applied to
-          applied = 'Applied' in driver.find_element_by_xpath("//*[contains(@class, 'applied-date')]//following::span").text
+          applied = 'Applied' in applied_message
           if not applied:
             raise Exception("I don't think we've yet applied to this job")
           else:
