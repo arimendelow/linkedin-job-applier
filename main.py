@@ -1,4 +1,6 @@
 from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as exp_conds
 from selenium.webdriver.common.keys import Keys
 import time
 from dotenv import load_dotenv
@@ -8,6 +10,7 @@ import sys
 
 driver = webdriver.Chrome(executable_path="./chromedriver")
 driver.implicitly_wait(2)
+wait = WebDriverWait(driver, 20)
 
 def log_into_linkedin_and_get_job_alert_links():
   driver.get("https://linkedin.com")
@@ -100,12 +103,16 @@ def do_work_auth_questions():
   except:
     print("No visa question")
 def submit_application():
-  #uncheck the follow button
-  driver.find_element_by_xpath("//label[contains(@for, 'follow')]").click()
+  #uncheck the follow button, if it exists
+  try:
+    driver.find_element_by_xpath("//label[contains(@for, 'follow')]").click()
+  except:
+    print("No follow button")
 
   # submit form
   driver.find_element_by_xpath("//button[contains(@aria-label, 'Submit')]").click()
-  time.sleep(1)
+  time.sleep(3)
+
   driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]").click()
   print("Applied!")
 
