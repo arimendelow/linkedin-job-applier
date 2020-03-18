@@ -37,7 +37,6 @@ def log_into_linkedin_and_get_job_alert_links():
 
   # Sometimes takes it a bit to load the list
   time.sleep(2)
-
   alerts = alert_list.find_elements_by_xpath(".//li")
 
   alert_links = []
@@ -111,9 +110,9 @@ def submit_application():
 
   # submit form
   driver.find_element_by_xpath("//button[contains(@aria-label, 'Submit')]").click()
-  time.sleep(3)
 
-  driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]").click()
+  dismiss_btn = wait.until(exp_conds.visibility_of_element_located(driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]")))
+  dismiss_btn.click()
   print("Applied!")
 
 # This returns True if it's the last page, and False if it's not
