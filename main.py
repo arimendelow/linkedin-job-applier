@@ -142,6 +142,7 @@ def main():
             raise Exception("I don't think we've yet applied to this job")
           else:
             # go to the next job_posting
+            print("Already applied to this job")
             continue
         except:
           try:
@@ -149,7 +150,6 @@ def main():
             driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]").click()
           except:
             print("Error:", sys.exc_info()[0])
-            print("May have already applied to this job")
             # go to the next job_posting
             continue
 
