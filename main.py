@@ -137,13 +137,75 @@ def submit_application():
   print("Applied!")
 
 # This returns True if it's the last page, and False if it's not
-def to_next_page():
+def to_next_app_page():
   try:
     driver.find_element_by_xpath("//button[contains(@aria-label, 'Continue')]").click()
     return False
   except:
     driver.find_element_by_xpath("//button[contains(@aria-label, 'Review')]").click()
     return True
+
+def apply_to_jobs(search_results):
+  for job_posting in search_results:
+    print("Attempting to apply to a job...")
+    job_posting.click()
+    # there are several possible reasons for not being able to click the apply button
+    try:
+      elem = WebDriverWait(driver, 5).until(Any_EC(
+        # enabled Apply button - sometimes needs to load
+        exp_conds.visibility_of_element_located((By.XPATH, "//button[contains(@aria-label, 'Apply to')][not(@disabled)]")),
+        # apply-to dialog
+        exp_conds.visibility_of_element_located((By.XPATH, "//*[contains(@class, 'applied-date')]//following::span"))
+      ))
+      if 'Easy Apply' in elem.text:
+        try:
+          elem.click()
+        except:
+          try:
+            driver.find_element_by_xpath("//header[contains(@class,'msg-overlay-bubble-header')]").click()
+            driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]").click()
+          except:
+            print("Error:", sys.exc_info()[0])
+            # go to the next job_posting
+            continue
+      elif 'Applied' in elem.text:
+        # go to the next job_posting
+        print("Already applied to this job")
+        continue
+      else:
+        raise Exception("I don't think we've yet applied to this job")
+    except:
+      print("Error:", sys.exc_info()[0])
+      # go to the next job_posting
+      continue
+
+  on_last_page = False
+  try:
+    # If there's a progress bar, then there will be multiple steps to this application
+    driver.find_element_by_xpath("//div[contains(@class, 'jobs-easy-apply-content__progress-bar')]")
+  except:
+    # Else, this is a onepager that probably just wants contact info, which should already be proviced. so:
+    on_last_page = True
+
+  # while there is no submit button...
+  while(not on_last_page):
+    # determine the type of page that I'm on
+    header_text = driver.find_element_by_xpath("//div[contains(@class, 'jobs-easy-apply-modal')]//h3").text
+
+    if header_text == "Contact info":
+      on_last_page = to_next_app_page()
+    elif header_text == "Resume":
+      on_last_page = to_next_app_page()
+    elif header_text == "Work authorization":
+      do_work_auth_questions()
+      on_last_page = to_next_app_page()
+    elif header_text == "Additional Questions":
+      do_additional_questions()
+      on_last_page = to_next_app_page()
+    else:
+      raise Exception(f"I don't know what to do with the header_text {header_text}")
+
+  submit_application()
 
 def main():
   alert_links = log_into_linkedin_and_get_job_alert_links()
@@ -152,69 +214,11 @@ def main():
     driver.get(job_search)
 
     sort_by_recent()
-    
-    search_results = get_job_postings_on_page()
 
-    for job_posting in search_results:
-      print("Attempting to apply to a job...")
-      job_posting.click()
-      # there are several possible reasons for not being able to click the apply button
-      try:
-        elem = WebDriverWait(driver, 5).until(Any_EC(
-          # enabled Apply button - sometimes needs to load
-          exp_conds.visibility_of_element_located((By.XPATH, "//button[contains(@aria-label, 'Apply to')][not(@disabled)]")),
-          # apply-to dialog
-          exp_conds.visibility_of_element_located((By.XPATH, "//*[contains(@class, 'applied-date')]//following::span"))
-        ))
-        if 'Easy Apply' in elem.text:
-          try:
-            elem.click()
-          except:
-            try:
-              driver.find_element_by_xpath("//header[contains(@class,'msg-overlay-bubble-header')]").click()
-              driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]").click()
-            except:
-              print("Error:", sys.exc_info()[0])
-              # go to the next job_posting
-              continue
-        elif 'Applied' in elem.text:
-          # go to the next job_posting
-          print("Already applied to this job")
-          continue
-        else:
-          raise Exception("I don't think we've yet applied to this job")
-      except:
-        print("Error:", sys.exc_info()[0])
-        # go to the next job_posting
-        continue
-
-      on_last_page = False
-      try:
-        # If there's a progress bar, then there will be multiple steps to this application
-        driver.find_element_by_xpath("//div[contains(@class, 'jobs-easy-apply-content__progress-bar')]")
-      except:
-        # Else, this is a onepager that probably just wants contact info, which should already be proviced. so:
-        on_last_page = True
-
-      # while there is no submit button...
-      while(not on_last_page):
-        # determine the type of page that I'm on
-        header_text = driver.find_element_by_xpath("//div[contains(@class, 'jobs-easy-apply-modal')]//h3").text
-
-        if header_text == "Contact info":
-          on_last_page = to_next_page()
-        elif header_text == "Resume":
-          on_last_page = to_next_page()
-        elif header_text == "Work authorization":
-          do_work_auth_questions()
-          on_last_page = to_next_page()
-        elif header_text == "Additional Questions":
-          do_additional_questions()
-          on_last_page = to_next_page()
-        else:
-          raise Exception(f"I don't know what to do with the header_text {header_text}")
-
-      submit_application()
+    on_final_jobs_page = False
+    while(not on_final_jobs_page):
+      search_results = get_job_postings_on_page()
+      apply_to_jobs(search_results)
 
 if __name__ == "__main__":
   main()
