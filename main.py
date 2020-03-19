@@ -45,6 +45,7 @@ def log_into_linkedin_and_get_job_alert_links():
     driver.find_element_by_xpath("//button[contains(@aria-label,'job alerts')]").click()
   except:
     driver.find_element_by_xpath("//header[contains(@class,'msg-overlay-bubble-header')]").click()
+    time.sleep(1) # wait for message
     driver.find_element_by_xpath("//button[contains(@aria-label,'job alerts')]").click()
 
   alert_list = driver.find_element_by_xpath("//h3[contains(text(), 'Saved job alerts')]//following::ul")
@@ -179,33 +180,34 @@ def apply_to_jobs(search_results):
       # go to the next job_posting
       continue
 
-  on_last_page = False
-  try:
-    # If there's a progress bar, then there will be multiple steps to this application
-    driver.find_element_by_xpath("//div[contains(@class, 'jobs-easy-apply-content__progress-bar')]")
-  except:
-    # Else, this is a onepager that probably just wants contact info, which should already be proviced. so:
-    on_last_page = True
+    # In application
+    on_last_page = False
+    try:
+      # If there's a progress bar, then there will be multiple steps to this application
+      driver.find_element_by_xpath("//div[contains(@class, 'jobs-easy-apply-content__progress-bar')]")
+    except:
+      # Else, this is a onepager that probably just wants contact info, which should already be proviced. so:
+      on_last_page = True
 
-  # while there is no submit button...
-  while(not on_last_page):
-    # determine the type of page that I'm on
-    header_text = driver.find_element_by_xpath("//div[contains(@class, 'jobs-easy-apply-modal')]//h3").text
+    # while there is no submit button...
+    while(not on_last_page):
+      # determine the type of page that I'm on
+      header_text = driver.find_element_by_xpath("//div[contains(@class, 'jobs-easy-apply-modal')]//h3").text
 
-    if header_text == "Contact info":
-      on_last_page = to_next_app_page()
-    elif header_text == "Resume":
-      on_last_page = to_next_app_page()
-    elif header_text == "Work authorization":
-      do_work_auth_questions()
-      on_last_page = to_next_app_page()
-    elif header_text == "Additional Questions":
-      do_additional_questions()
-      on_last_page = to_next_app_page()
-    else:
-      raise Exception(f"I don't know what to do with the header_text {header_text}")
+      if header_text == "Contact info":
+        on_last_page = to_next_app_page()
+      elif header_text == "Resume":
+        on_last_page = to_next_app_page()
+      elif header_text == "Work authorization":
+        do_work_auth_questions()
+        on_last_page = to_next_app_page()
+      elif header_text == "Additional Questions":
+        do_additional_questions()
+        on_last_page = to_next_app_page()
+      else:
+        raise Exception(f"I don't know what to do with the header_text {header_text}")
 
-  submit_application()
+    submit_application()
 
 def main():
   alert_links = log_into_linkedin_and_get_job_alert_links()
@@ -219,6 +221,10 @@ def main():
     while(not on_final_jobs_page):
       search_results = get_job_postings_on_page()
       apply_to_jobs(search_results)
+
+      pages = driver.find_element_by_xpath("//ul[contains(@class, 'pagination')]")
+      current_page = pages.find_element_by_xpath("//button[contains(@aria-current, 'true')]")
+
 
 if __name__ == "__main__":
   main()
