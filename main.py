@@ -13,6 +13,10 @@ driver = webdriver.Chrome(executable_path="./chromedriver")
 driver.implicitly_wait(1)
 wait = WebDriverWait(driver, 20)
 
+# How far back do you want to go? If a job was posted on or before this date, it will not be applied to.
+filter_date_str = '2020-3-18'
+filter_date = datetime.datetime.strptime(filter_date_str, '%Y-%m-%d')
+
 # Use with WebDriverWait to combine expected_conditions in an OR.
 # Will return the element that it finds first
 class Any_EC:
@@ -83,7 +87,7 @@ def get_job_postings_on_page():
   search_results_div.send_keys(Keys.PAGE_DOWN)
   time.sleep(1)
 
-  return search_results_div.find_elements_by_xpath(".//li[contains(@class, 'list__item')]//h3")
+  return search_results_div.find_elements_by_xpath(".//li[contains(@class, 'list__item')]")
 
 def do_additional_questions():
   try:
@@ -94,7 +98,6 @@ def do_additional_questions():
         question.find_element_by_xpath(".//input[contains(@value, 'Yes')]//following::label").click()
       # Otherwise, if it wants a number, put something in
       except:
-        print("Error:", sys.exc_info()[0])            
         try:
           question.find_element_by_xpath(".//input[contains(@type, 'number')]").clear()
           question.find_element_by_xpath(".//input[contains(@type, 'number')]").send_keys("3")
@@ -149,8 +152,18 @@ def to_next_app_page():
 
 def apply_to_jobs(search_results):
   for job_posting in search_results:
-    print("Attempting to apply to a job...")
-    job_posting.click()
+    job_header = job_posting.find_element_by_xpath(".//h3")
+    print(f"Attempting to apply to {job_header.text}...")
+    post_date_str = job_posting.find_element_by_xpath(".//time").get_attribute("datetime")
+    post_date = datetime.datetime.strptime(post_date_str, '%Y-%m-%d')
+    
+    # If the date this job was posted at is less recent than the filter date...
+    # less_recent < more_recent
+    if post_date < filter_date:
+      return False # Stop applying to jobs in this search
+
+    # else...
+    job_header.click()
     # there are several possible reasons for not being able to click the apply button
     try:
       elem = WebDriverWait(driver, 5).until(Any_EC(
@@ -209,28 +222,40 @@ def apply_to_jobs(search_results):
         raise Exception(f"I don't know what to do with the header_text {header_text}")
 
     submit_application()
+    return True # Keep applying to jobs in this search
+
+# Apply to jobs on every page of the results
+def apply_to_jobs_pagination():
+  # For date filtering
+  continue_applying_to_search_results = True
+
+  on_final_jobs_page = False
+  while(not on_final_jobs_page):
+    search_results = get_job_postings_on_page()
+
+    # This function will let us know if we should keep running it
+    continue_applying_to_search_results = apply_to_jobs(search_results)
+
+    if not continue_applying_to_search_results:
+      return
+
+    # Go to next page
+    pages = driver.find_element_by_xpath("//ul[contains(@class, 'pagination')]")
+    current_page = pages.find_element_by_xpath(".//button[contains(@aria-current, 'true')]").text
+    try:
+      next_page_btn = pages.find_element_by_xpath(f".//button[contains(@aria-label, '{int(current_page) + 1}')]")
+      next_page_btn.click()
+    except:
+      # On final jobs page
+      on_final_jobs_page = True
 
 def main():
   alert_links = log_into_linkedin_and_get_job_alert_links()
 
   for job_search in alert_links:
     driver.get(job_search)
-
     sort_by_recent()
-
-    # Apply to jobs on every page of the results
-    on_final_jobs_page = False
-    while(not on_final_jobs_page):
-      search_results = get_job_postings_on_page()
-      apply_to_jobs(search_results)
-
-      pages = driver.find_element_by_xpath("//ul[contains(@class, 'pagination')]")
-      current_page = pages.find_element_by_xpath(".//button[contains(@aria-current, 'true')]").text
-      try:
-        next_page_btn = pages.find_element_by_xpath(f".//button[contains(@aria-label, '{int(current_page) + 1}')]")
-        next_page_btn.click()
-      except:
-        on_final_jobs_page = True
+    apply_to_jobs_pagination()
 
 
 if __name__ == "__main__":
