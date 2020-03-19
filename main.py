@@ -156,6 +156,8 @@ def to_next_app_page():
     return True
 
 def apply_to_jobs(search_results):
+  jobs_skipped = 0
+
   for job_posting in search_results:
     job_header = job_posting.find_element_by_xpath(".//h3")
     print(f"Attempting to apply to {job_header.text}...")
@@ -192,6 +194,7 @@ def apply_to_jobs(search_results):
       elif 'Applied' in elem.text:
         # go to the next job_posting
         print("Already applied to this job")
+        jobs_skipped += 1
         continue
       else:
         raise Exception("I don't think we've yet applied to this job")
