@@ -96,6 +96,7 @@ def do_additional_questions():
       except:
         print("Error:", sys.exc_info()[0])            
         try:
+          question.find_element_by_xpath(".//input[contains(@type, 'number')]").clear()
           question.find_element_by_xpath(".//input[contains(@type, 'number')]").send_keys("3")
         except:
           print("Error:", sys.exc_info()[0])
