@@ -115,6 +115,7 @@ def do_work_auth_questions():
     driver.find_element_by_xpath("//span[text()='Will you now, or in the future, require sponsorship for employment visa status (e.g. H-1B visa status)?']//following::input[contains(@value, 'No')]//following::label").click()
   except:
     print("No visa question")
+
 def submit_application():
   #uncheck the follow button, if it exists
   try:
