@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 import sys
+import datetime
 
 driver = webdriver.Chrome(executable_path="./chromedriver")
 driver.implicitly_wait(1)
@@ -160,6 +161,7 @@ def apply_to_jobs(search_results):
     # If the date this job was posted at is less recent than the filter date...
     # less_recent < more_recent
     if post_date < filter_date:
+      print(f"Finished applying to jobs in this search before {filter_date.date()}")
       return False # Stop applying to jobs in this search
 
     # else...
@@ -242,11 +244,18 @@ def apply_to_jobs_pagination():
     # Go to next page
     pages = driver.find_element_by_xpath("//ul[contains(@class, 'pagination')]")
     current_page = pages.find_element_by_xpath(".//button[contains(@aria-current, 'true')]").text
+    print()
+    print(f"Done with page {current_page}!")
     try:
       next_page_btn = pages.find_element_by_xpath(f".//button[contains(@aria-label, '{int(current_page) + 1}')]")
       next_page_btn.click()
+      print("----------------------")
+      print(f"Going to page {next_page_btn.text}!")
+      print()
     except:
       # On final jobs page
+      print("No more pages.")
+      print()
       on_final_jobs_page = True
 
 def main():
