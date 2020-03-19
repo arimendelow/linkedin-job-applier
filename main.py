@@ -10,8 +10,21 @@ import os
 import sys
 
 driver = webdriver.Chrome(executable_path="./chromedriver")
-driver.implicitly_wait(2)
+driver.implicitly_wait(1)
 wait = WebDriverWait(driver, 20)
+
+# Use with WebDriverWait to combine expected_conditions in an OR.
+# Will return the element that it finds first
+class Any_EC:
+  def __init__(self, *args):
+    self.ecs = args
+  def __call__(self, driver):
+    for fn in self.ecs:
+      try:
+        # fn(driver) will return the WebElement
+        if fn(driver): return fn(driver)
+      except:
+        pass
 
 def log_into_linkedin_and_get_job_alert_links():
   driver.get("https://linkedin.com")
@@ -136,7 +149,7 @@ def main():
 
   for job_search in alert_links:
     driver.get(job_search)
- 
+
     sort_by_recent()
     
     search_results = get_job_postings_on_page()
@@ -146,33 +159,33 @@ def main():
       job_posting.click()
       # there are several possible reasons for not being able to click the apply button
       try:
-        apply_btn = driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]")
-        # This button can sometimes take time to switch to 'aready applied', but Selenium will still think that it clicked it
-        # Only want it to wait if it's actually found the button, which is why this is after that find_element command
-        try:
-          # Wait up to 5 seconds to see if the 'applied on' message shows up. If it does, go straight ahead to the next step.
-          applied_message = WebDriverWait(driver, 5).until(exp_conds.visibility_of_element_located((By.XPATH, "//*[contains(@class, 'applied-date')]//following::span")))
-          raise Exception("May have already applied")
-        except:
-          apply_btn.click()
-      except:
-        try:
-          # It's possible that the job has already been applied to
-          applied = 'Applied' in applied_message.text
-          if not applied:
-            raise Exception("I don't think we've yet applied to this job")
-          else:
-            # go to the next job_posting
-            print("Already applied to this job")
-            continue
-        except:
+        elem = WebDriverWait(driver, 5).until(Any_EC(
+          # enabled Apply button - sometimes needs to load
+          exp_conds.visibility_of_element_located((By.XPATH, "//button[contains(@aria-label, 'Apply to')][not(@disabled)]")),
+          # apply-to dialog
+          exp_conds.visibility_of_element_located((By.XPATH, "//*[contains(@class, 'applied-date')]//following::span"))
+        ))
+        if 'Easy Apply' in elem.text:
           try:
-            driver.find_element_by_xpath("//header[contains(@class,'msg-overlay-bubble-header')]").click()
-            driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]").click()
+            elem.click()
           except:
-            print("Error:", sys.exc_info()[0])
-            # go to the next job_posting
-            continue
+            try:
+              driver.find_element_by_xpath("//header[contains(@class,'msg-overlay-bubble-header')]").click()
+              driver.find_element_by_xpath("//button[contains(@class, 'jobs-apply-button')]").click()
+            except:
+              print("Error:", sys.exc_info()[0])
+              # go to the next job_posting
+              continue
+        elif 'Applied' in elem.text:
+          # go to the next job_posting
+          print("Already applied to this job")
+          continue
+        else:
+          raise Exception("I don't think we've yet applied to this job")
+      except:
+        print("Error:", sys.exc_info()[0])
+        # go to the next job_posting
+        continue
 
       on_last_page = False
       try:
