@@ -217,13 +217,19 @@ def main():
 
     sort_by_recent()
 
+    # Apply to jobs on every page of the results
     on_final_jobs_page = False
     while(not on_final_jobs_page):
       search_results = get_job_postings_on_page()
       apply_to_jobs(search_results)
 
       pages = driver.find_element_by_xpath("//ul[contains(@class, 'pagination')]")
-      current_page = pages.find_element_by_xpath("//button[contains(@aria-current, 'true')]")
+      current_page = pages.find_element_by_xpath(".//button[contains(@aria-current, 'true')]").text
+      try:
+        next_page_btn = pages.find_element_by_xpath(f".//button[contains(@aria-label, '{int(current_page) + 1}')]")
+        next_page_btn.click()
+      except:
+        on_final_jobs_page = True
 
 
 if __name__ == "__main__":
