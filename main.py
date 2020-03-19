@@ -62,7 +62,8 @@ def log_into_linkedin_and_get_job_alert_links():
   alert_links = []
   for alert in alerts:
     link = alert.find_element_by_xpath(".//a")
-    alert_links.append(link.get_attribute("href"))
+    # First item in tuple is the link, the second is the alert title
+    alert_links.append((link.get_attribute("href"), alert.text))
   
   return alert_links
 
@@ -262,7 +263,10 @@ def main():
   alert_links = log_into_linkedin_and_get_job_alert_links()
 
   for job_search in alert_links:
-    driver.get(job_search)
+    driver.get(job_search[0])
+    print("Applying to the following jobs:")
+    print(job_search[1])
+    print()
     sort_by_recent()
     apply_to_jobs_pagination()
 
