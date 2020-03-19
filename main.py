@@ -18,6 +18,8 @@ wait = WebDriverWait(driver, 20)
 filter_date_str = '2020-3-18'
 filter_date = datetime.datetime.strptime(filter_date_str, '%Y-%m-%d')
 
+total_jobs_applied = 0
+
 # Use with WebDriverWait to combine expected_conditions in an OR.
 # Will return the element that it finds first
 class Any_EC:
@@ -142,6 +144,7 @@ def submit_application():
     driver.find_element_by_xpath("//button[contains(@data-control-name, 'submit')]").click()
 
   print("Applied!")
+  total_jobs_applied += 1
 
 # This returns True if it's the last page, and False if it's not
 def to_next_app_page():
@@ -269,6 +272,8 @@ def main():
     print()
     sort_by_recent()
     apply_to_jobs_pagination()
+  
+  print(f"Done! Applied to {total_jobs_applied} jobs.")
 
 
 if __name__ == "__main__":
