@@ -144,6 +144,7 @@ def submit_application():
     driver.find_element_by_xpath("//button[contains(@data-control-name, 'submit')]").click()
 
   print("Applied!")
+  global total_jobs_applied
   total_jobs_applied += 1
 
 # This returns True if it's the last page, and False if it's not
