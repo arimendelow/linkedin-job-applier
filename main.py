@@ -199,7 +199,7 @@ def apply_to_jobs(search_results):
         print("Already applied to this job")
         global jobs_skipped
         jobs_skipped += 1
-        if jobs_skipped > max_jobs_skipped_per_search:
+        if jobs_skipped >= max_jobs_skipped_per_search:
           print(f"Skipped {jobs_skipped} in this Search - onto the next one!")
           return False # Stop applying to jobs in this search
         continue
