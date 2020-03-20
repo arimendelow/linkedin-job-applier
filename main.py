@@ -219,14 +219,15 @@ def apply_to_jobs(search_results):
       # Else, this is a onepager that probably just wants contact info, which should already be proviced. so:
       on_last_page = True
 
-    # while there is no submit button...
-    while(not on_last_page):
+    # while there is no submit button, or we don't want to skip the rest of this application...
+    skip_rest_of_application = False
+    while(not on_last_page and not skip_rest_of_application):
       # determine the type of page that I'm on
       header_text = driver.find_element_by_xpath("//div[contains(@class, 'jobs-easy-apply-modal')]//h3").text
 
       if header_text == "Contact info":
         on_last_page = to_next_app_page()
-      elif header_text == "Resume" or header_text == "Currículum":
+      elif header_text == "Resume":
         on_last_page = to_next_app_page()
       elif header_text == "Work authorization":
         do_work_auth_questions()
@@ -235,9 +236,13 @@ def apply_to_jobs(search_results):
         do_additional_questions()
         on_last_page = to_next_app_page()
       else:
-        raise Exception(f"I don't know what to do with the header_text {header_text}")
+        print(f"I don't know what to do with the header_text {header_text}. Moving onto the next application...")
+        skip_rest_of_application = True
+        driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]").click()
+        driver.find_element_by_xpath("//button[contains(@class, 'confirm-dialog-btn')][2]").click()
 
-    submit_application()
+    if not skip_rest_of_application:
+      submit_application()
   return True # Keep applying to jobs in this search
 
 # Apply to jobs on every page of the results
