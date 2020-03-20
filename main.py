@@ -18,6 +18,8 @@ wait = WebDriverWait(driver, 20)
 filter_date_str = '2020-3-18'
 filter_date = datetime.datetime.strptime(filter_date_str, '%Y-%m-%d')
 
+max_jobs_skipped_per_search = 25 # number of jobs on one page
+
 total_jobs_applied = 0
 
 # Use with WebDriverWait to combine expected_conditions in an OR.
@@ -175,7 +177,7 @@ def apply_to_jobs(search_results):
     job_header.click()
     # there are several possible reasons for not being able to click the apply button
     try:
-      elem = WebDriverWait(driver, 5).until(Any_EC(
+      elem = WebDriverWait(driver, 20).until(Any_EC(
         # enabled Apply button - sometimes needs to load
         exp_conds.visibility_of_element_located((By.XPATH, "//button[contains(@aria-label, 'Apply to')][not(@disabled)]")),
         # apply-to dialog
@@ -196,6 +198,9 @@ def apply_to_jobs(search_results):
         # go to the next job_posting
         print("Already applied to this job")
         jobs_skipped += 1
+        if jobs_skipped > max_jobs_skipped_per_search:
+          print(f"Skipped {jobs_skipped} in this Search - onto the next one!")
+          return False # Stop applying to jobs in this search
         continue
       else:
         raise Exception("I don't think we've yet applied to this job")
@@ -232,7 +237,7 @@ def apply_to_jobs(search_results):
         raise Exception(f"I don't know what to do with the header_text {header_text}")
 
     submit_application()
-    return True # Keep applying to jobs in this search
+  return True # Keep applying to jobs in this search
 
 # Apply to jobs on every page of the results
 def apply_to_jobs_pagination():
@@ -256,9 +261,11 @@ def apply_to_jobs_pagination():
     print(f"Done with page {current_page}!")
     try:
       next_page_btn = pages.find_element_by_xpath(f".//button[contains(@aria-label, '{int(current_page) + 1}')]")
+      # Need to do this for the print statement - if we try to access the text after navigating to the next page, we'll get a state element exception
+      next_page_btn_text = next_page_btn.text
       next_page_btn.click()
       print("----------------------")
-      print(f"Going to page {next_page_btn.text}!")
+      print(f"Going to page {next_page_btn_text}!")
       print()
     except:
       # On final jobs page
@@ -278,6 +285,7 @@ def main():
     apply_to_jobs_pagination()
   
   print(f"Done! Applied to {total_jobs_applied} jobs.")
+  driver.close()
 
 
 if __name__ == "__main__":
