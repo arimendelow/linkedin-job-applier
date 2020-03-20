@@ -18,6 +18,7 @@ wait = WebDriverWait(driver, 20)
 filter_date_str = '2020-3-18'
 filter_date = datetime.datetime.strptime(filter_date_str, '%Y-%m-%d')
 
+jobs_skipped = 0
 max_jobs_skipped_per_search = 25 # number of jobs on one page
 
 total_jobs_applied = 0
@@ -158,9 +159,8 @@ def to_next_app_page():
     driver.find_element_by_xpath("//button[contains(@aria-label, 'Review')]").click()
     return True
 
+# applies to one page of jobs
 def apply_to_jobs(search_results):
-  jobs_skipped = 0
-
   for job_posting in search_results:
     job_header = job_posting.find_element_by_xpath(".//h3")
     print(f"Attempting to apply to {job_header.text}...")
@@ -197,6 +197,7 @@ def apply_to_jobs(search_results):
       elif 'Applied' in elem.text:
         # go to the next job_posting
         print("Already applied to this job")
+        global jobs_skipped
         jobs_skipped += 1
         if jobs_skipped > max_jobs_skipped_per_search:
           print(f"Skipped {jobs_skipped} in this Search - onto the next one!")
@@ -282,6 +283,8 @@ def main():
     print(job_search[1])
     print()
     sort_by_recent()
+    global jobs_skipped
+    jobs_skipped = 0 # reset this counter
     apply_to_jobs_pagination()
   
   print(f"Done! Applied to {total_jobs_applied} jobs.")
