@@ -226,7 +226,7 @@ def apply_to_jobs(search_results):
 
       if header_text == "Contact info":
         on_last_page = to_next_app_page()
-      elif header_text == "Resume":
+      elif header_text == "Resume" or header_text == "Currículum":
         on_last_page = to_next_app_page()
       elif header_text == "Work authorization":
         do_work_auth_questions()
