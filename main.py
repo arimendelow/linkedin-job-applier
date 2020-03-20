@@ -171,6 +171,7 @@ def apply_to_jobs(search_results):
     # less_recent < more_recent
     if post_date < filter_date:
       print(f"Finished applying to jobs in this search before {filter_date.date()}")
+      print()
       return False # Stop applying to jobs in this search
 
     # else...
