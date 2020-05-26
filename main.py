@@ -15,7 +15,7 @@ driver.implicitly_wait(1)
 wait = WebDriverWait(driver, 20)
 
 # How far back do you want to go? If a job was posted on or before this date, it will not be applied to.
-filter_date_str = '2020-3-18'
+filter_date_str = '2020-5-1'
 filter_date = datetime.datetime.strptime(filter_date_str, '%Y-%m-%d')
 
 jobs_skipped = 0
@@ -37,7 +37,7 @@ class Any_EC:
         pass
 
 def log_into_linkedin_and_get_job_alert_links():
-  driver.get("https://linkedin.com")
+  driver.get("https://linkedin.com/jobs")
   user = driver.find_element_by_xpath("//input[contains(@aria-label,'email')]")
   user.send_keys(os.getenv("USERNAME"))
   password = driver.find_element_by_xpath("//input[contains(@aria-label,'password')]")
@@ -47,8 +47,6 @@ def log_into_linkedin_and_get_job_alert_links():
   # # Sometimes, linkedin asks for verification of contact information
   # try:
   #   driver.find_element_by_xpath("//span[contains(@id,'prompt')]//following::button").click()
-
-  driver.get("https://www.linkedin.com/jobs/")
 
   # If the screen is short and the chat menu is open, it'll block the 'job alerts' button
   try:
