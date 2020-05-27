@@ -11,8 +11,8 @@ import sys
 import datetime
 
 driver = webdriver.Chrome(executable_path="./chromedriver")
-driver.implicitly_wait(1)
-wait = WebDriverWait(driver, 20)
+driver.implicitly_wait(2)
+wait = WebDriverWait(driver, 10)
 
 # How far back do you want to go? If a job was posted on or before this date, it will not be applied to.
 filter_date_str = '2020-5-1'
@@ -37,13 +37,14 @@ class Any_EC:
         pass
 
 def log_into_linkedin_and_get_job_alert_links():
-  driver.get("https://linkedin.com/jobs")
-  user = driver.find_element_by_xpath("//input[contains(@aria-label,'email')]")
+  driver.get("https://www.linkedin.com/login")
+  user = driver.find_element_by_xpath("//input[contains(@aria-label,'Email or Phone')]")
   user.send_keys(os.getenv("USERNAME"))
-  password = driver.find_element_by_xpath("//input[contains(@aria-label,'password')]")
+  password = driver.find_element_by_xpath("//input[contains(@aria-label,'Password')]")
   password.send_keys(os.getenv("PASSWORD"))
   password.send_keys(Keys.RETURN)
 
+  driver.get("https://linkedin.com/jobs")
   # # Sometimes, linkedin asks for verification of contact information
   # try:
   #   driver.find_element_by_xpath("//span[contains(@id,'prompt')]//following::button").click()
@@ -56,7 +57,8 @@ def log_into_linkedin_and_get_job_alert_links():
     time.sleep(1) # wait for message
     driver.find_element_by_xpath("//button[contains(@aria-label,'job alerts')]").click()
 
-  alert_list = driver.find_element_by_xpath("//h3[contains(text(), 'Saved job alerts')]//following::ul")
+  # alert_list = driver.find_element_by_xpath("//h3[contains(text(), 'Saved job alerts')]//following::ul")
+  alert_list = driver.find_element_by_xpath("//h3//following::h3//following::ul")
 
   # Sometimes takes it a bit to load the list
   time.sleep(2)
@@ -71,9 +73,9 @@ def log_into_linkedin_and_get_job_alert_links():
   return alert_links
 
 def sort_by_recent():
-  driver.find_element_by_xpath("//artdeco-dropdown-trigger[contains(@aria-label, 'Sort by')]").click()
+  driver.find_element_by_xpath("//button[contains(@aria-label, 'Sort by')]").click()
   driver.find_element_by_xpath("//input[contains(@id, 'sort-by-date')]//parent::*").click()
-  driver.find_element_by_xpath("//artdeco-dropdown-trigger[contains(@aria-label, 'Sort by')]").click()
+  driver.find_element_by_xpath("//button[contains(@aria-label, 'Sort by')]").click()
 
 def get_job_postings_on_page():
   search_results_div = driver.find_element_by_xpath("//div[contains(@class, 'jobs-search-results')]")
@@ -91,12 +93,17 @@ def get_job_postings_on_page():
   time.sleep(1)
   search_results_div.send_keys(Keys.PAGE_DOWN)
   time.sleep(1)
+  search_results_div.send_keys(Keys.PAGE_DOWN)
+  time.sleep(1)
+  search_results_div.send_keys(Keys.PAGE_DOWN)
+  time.sleep(1)
 
   return search_results_div.find_elements_by_xpath(".//li[contains(@class, 'list__item')]")
 
 def do_additional_questions():
   try:
-    questions = driver.find_elements_by_xpath("//h3[contains(text(), 'Additional Questions')]//parent::*//following::div[contains(@class, 'jobs-easy-apply-form-section__grouping')]")
+    # questions = driver.find_elements_by_xpath("//h3[contains(text(), 'Additional Questions')]//parent::*//following::div[contains(@class, 'jobs-easy-apply-form-section__grouping')]")
+    questions = driver.find_elements_by_xpath("//div[contains(@class, 'jobs-easy-apply-modal')]//h3//parent::*//following::div[contains(@class, 'jobs-easy-apply-form-section__grouping')]")
     for question in questions:
       # If it's a radio button, select 'yes'
       try:
@@ -107,8 +114,13 @@ def do_additional_questions():
           question.find_element_by_xpath(".//input[contains(@type, 'number')]").clear()
           question.find_element_by_xpath(".//input[contains(@type, 'number')]").send_keys("3")
         except:
-          print("Error:", sys.exc_info()[0])
-          print("Cannot identify question type.")
+          # Sometimes, instead of number, the type is text
+          try:
+            question.find_element_by_xpath(".//input[contains(@type, 'text')]").clear()
+            question.find_element_by_xpath(".//input[contains(@type, 'text')]").send_keys("3")
+          except:
+            print("Error:", sys.exc_info()[0])
+            print("Cannot identify question type.")
     # next page
     driver.find_element_by_xpath("//button[contains(@aria-label, 'Continue')]").click()
   except:
@@ -133,16 +145,20 @@ def submit_application():
   except:
     print("No follow button")
 
-  # submit form - two different types of submit button
+  # submitting doesn't always work - sometimes, it'll throw up an error (such as 'wait before reapplying')
   try:
-    # more common - this one also has a 'application submitted' dialog
-    driver.find_element_by_xpath("//button[contains(@aria-label, 'Submit')]").click()
-    # Wait until the 'applied to' page is loading before dismissing the application
-    wait.until(exp_conds.visibility_of_element_located((By.XPATH, "//h2[contains(@id, 'post-apply')]")))
-    driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]").click()
+    # submit form - two different types of submit button
+    try:
+      # more common - this one also has a 'application submitted' dialog
+      driver.find_element_by_xpath("//button[contains(@aria-label, 'Submit')]").click()
+      # Wait until the 'applied to' page is loading before dismissing the application
+      wait.until(exp_conds.visibility_of_element_located((By.XPATH, "//h2[contains(@id, 'post-apply')]")))
+      driver.find_element_by_xpath("//button[contains(@aria-label, 'Dismiss')]").click()
+    except:
+      # less common
+      driver.find_element_by_xpath("//button[contains(@data-control-name, 'submit')]").click()
   except:
-    # less common
-    driver.find_element_by_xpath("//button[contains(@data-control-name, 'submit')]").click()
+    driver.find_element_by_xpath("//div[contains(@aria-labelledby, 'jobs-apply-header')]//following::button[contains(@aria-label, 'Dismiss')]").click()
 
   print("Applied!")
   global total_jobs_applied
@@ -160,7 +176,7 @@ def to_next_app_page():
 # applies to one page of jobs
 def apply_to_jobs(search_results):
   for job_posting in search_results:
-    job_header = job_posting.find_element_by_xpath(".//h3")
+    job_header = job_posting.find_element_by_xpath(".//a[contains(@class, 'job-card-list__title')]")
     print(f"Attempting to apply to {job_header.text}...")
     post_date_str = job_posting.find_element_by_xpath(".//time").get_attribute("datetime")
     post_date = datetime.datetime.strptime(post_date_str, '%Y-%m-%d')
